@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-<<<<<<< HEAD
 """This is the city class"""
 from models.base_model import BaseModel, Base
 from sqlalchemy import Column, Integer, String, ForeignKey
@@ -22,13 +21,3 @@ class City(BaseModel, Base):
     else:
         state_id = ""
         name = ""
-=======
-""" City Module for HBNB project """
-from models.base_model import BaseModel
-
-
-class City(BaseModel):
-    """ The city class, contains state ID and name """
-    state_id = ""
-    name = ""
->>>>>>> 45086d9d76cb88c7d6863db7478aebd63d704c1f
