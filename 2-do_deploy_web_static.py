@@ -1,54 +1,68 @@
- 1.54 KB
-   
 #!/usr/bin/python3
-"""
-Fabric script that distributes an archive to your web servers
-"""
-
-from datetime import datetime
+'''Module 2-do_deploy_web_static
+Distributes an archive to your web servers, using do_deploy()
+'''
 from fabric.api import *
 import os
+from fabric.api import settings
 
-env.hosts = ["34.74.72.68", "54.196.204.208"]
-env.user = "ubuntu"
+env.hosts = ['18.232.153.3', '34.236.33.185']
 
 
-def do_pack():
-    """
-        return the archive path if archive has generated correctly.
-    """
-
-    local("mkdir -p versions")
-    date = datetime.now().strftime("%Y%m%d%H%M%S")
-    archived_f_path = "versions/web_static_{}.tgz".format(date)
-    t_gzip_archive = local("tar -cvzf {} web_static".format(archived_f_path))
-
-    if t_gzip_archive.succeeded:
-        return archived_f_path
-    else:
-        return None
+class FabricException(Exception):
+    '''Fake wrapper class to handle Fabric run() aborts as Python exceptions'''
+    pass
 
 
 def do_deploy(archive_path):
-    """
-        Distribute archive.
-    """
-    if os.path.exists(archive_path):
-        archived_file = archive_path[9:]
-        newest_version = "/data/web_static/releases/" + archived_file[:-4]
-        archived_file = "/tmp/" + archived_file
-        put(archive_path, "/tmp/")
-        run("sudo mkdir -p {}".format(newest_version))
-        run("sudo tar -xzf {} -C {}/".format(archived_file,
-                                             newest_version))
-        run("sudo rm {}".format(archived_file))
-        run("sudo mv {}/web_static/* {}".format(newest_version,
-                                                newest_version))
-        run("sudo rm -rf {}/web_static".format(newest_version))
-        run("sudo rm -rf /data/web_static/current")
-        run("sudo ln -s {} /data/web_static/current".format(newest_version))
+    '''Calls do_deploy_run and returns either True or
+    False if an exception is raised'''
+    with settings(abort_exception=FabricException):
+        try:
+            returned = do_deploy_run(archive_path)
+        except Exception or FabricException:
+            # print("Exception caught, returned false")
+            return False
+    if returned is False:
+        # print("Function returned false")
+        return False
+    # print("Function returned True")
+    return True
 
-        print("New version deployed!")
-        return True
 
-    return False
+def do_deploy_run(archive_path):
+    '''Deploys archive to remote servers'''
+    # Archive's name without the .tgz extension
+    archive_name = archive_path[9:-4]
+
+    # print("Archive path:", os.getcwd() + '/' + archive_path)
+    # Return false if the archive doesn't exist
+    if not os.path.isfile(os.getcwd() + '/' + archive_path):
+        return False
+
+    # Upload the archive to remote servers
+    put(archive_path, "/tmp/")
+    # If a folder with the same archive name exists, remvoe it
+    run('sudo rm -rf -- /data/web_static/releases/' + archive_name)
+
+    run('sudo mkdir -p /data/web_static/releases/' + archive_name)
+
+    # Extract the archive's contents to
+    # /data/web_static/releases/<archive_name>
+    run('sudo tar -xzf /tmp/' + archive_path[9:] +
+        ' -C /data/web_static/releases/' + archive_name)
+    # Move the contents of the extracted archive to its parent folder
+    run('sudo mv -f /data/web_static/releases/'
+        + archive_name + '/web_static/* '
+        + '/data/web_static/releases/' + archive_name)
+    run('sudo rm -rf /data/web_static/releases/'
+        + archive_name + '/web_static/')
+    run('sudo rm /tmp/' + archive_path[9:])
+
+    # '''
+    # Remove the symbolic link if it exists
+    run('sudo rm -f -- /data/web_static/current')
+    run('sudo ln -sf /data/web_static/releases/'
+        + archive_path[9:-4] + ' /data/web_static/current')
+    return True
+    # '''
