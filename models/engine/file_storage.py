@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+B#!/usr/bin/python3
 """This module defines a class to manage file storage for hbnb clone"""
 import json
 
@@ -62,4 +62,4 @@ class FileStorage:
             if v == obj:
                 FileStorage.__objects.pop(k)
             else:
-                passit
+                pass
