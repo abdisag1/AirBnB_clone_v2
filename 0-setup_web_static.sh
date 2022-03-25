@@ -1,4 +1,4 @@
-#!/usr/bin/env/bash
+#!/usr/bin/env bash
 # sets up the webservers for deployment
 sudo apt-get -y update
 sudo apt-get -y upgrade
